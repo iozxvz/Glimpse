@@ -11,19 +11,17 @@
 
 @interface GlimpseAssetWriter()
 {
-    CFAbsoluteTime      _timeOfFirstFrame;
     CFTimeInterval      _timestamp;
     int32_t            _frameRate;
     uint64_t            _frameCount;
     dispatch_queue_t    _queue;
-    
 }
 
-@property (strong, nonatomic) NSMutableArray                        *frameBuffer;
 @property (strong, nonatomic) AVAssetWriter                         *writer;
 @property (strong, nonatomic) AVAssetWriterInput                    *input;
 @property (strong, nonatomic) AVAssetWriterInputPixelBufferAdaptor  *adapter;
 @property (strong, nonatomic) CADisplayLink                         *displayLink;
+@property (nonatomic, assign) NSInteger presentationI;
 
 @end
 
@@ -41,7 +39,6 @@ static NSString *const GlimpseAssetWriterQueueName = @"com.Glimpse.asset.writer.
     {
         self.size               = [[UIScreen mainScreen] bounds].size;
         self.framesPerSecond    = 24;
-        self.frameBuffer        = [[NSMutableArray alloc] init];
         
         _frameRate  = (int32_t)self.framesPerSecond;
         _queue      = dispatch_queue_create([GlimpseAssetWriterQueueName cStringUsingEncoding:NSUTF8StringEncoding], 0);
@@ -92,9 +89,7 @@ static NSString *const GlimpseAssetWriterQueueName = @"com.Glimpse.asset.writer.
     
     [self.writer addInput:self.input];
     
-    self.input.expectsMediaDataInRealTime = YES;
-    
-    _timeOfFirstFrame = CFAbsoluteTimeGetCurrent();
+    self.input.expectsMediaDataInRealTime = NO;
     
     return _writer;
 }
@@ -127,97 +122,30 @@ static NSString *const GlimpseAssetWriterQueueName = @"com.Glimpse.asset.writer.
 
 - (void)writeFrameWithImage:(UIImage *)image
 {
-    [self.frameBuffer addObject:image];
+    dispatch_async(_queue, ^{
+        __block CVPixelBufferRef buffer = [self pixelBufferForImage:image];
+        BOOL success = [self.adapter appendPixelBuffer:buffer withPresentationTime:CMTimeMake(self.presentationI, self->_frameRate)];
+        self.presentationI++;
+        assert(success);
+        if(buffer)
+            CVBufferRelease(buffer);
+    });
+}
+
+- (void)start {
+    [self.writer startWriting];
+    [self.writer startSessionAtSourceTime:kCMTimeZero];
 }
 
 - (void)writeVideoFromImageFrames:(void(^)(NSURL *outputPath))callback
 {
-    [self.writer startWriting];
-    [self.writer startSessionAtSourceTime:kCMTimeZero];
-
-    __block CVPixelBufferRef buffer = [self pixelBufferForImage:self.frameBuffer[0]];
-    BOOL success = [self.adapter appendPixelBuffer:buffer withPresentationTime:kCMTimeZero];
-    
-    NSTimeInterval startTimeDiff    = [self.startDate timeIntervalSinceNow];
-    NSTimeInterval endTimeDiff      = [self.endDate timeIntervalSinceNow];
-    NSTimeInterval sleepOffset      = ((endTimeDiff - startTimeDiff) / self.frameBuffer.count);
-    
-    [NSThread sleepForTimeInterval:sleepOffset];
-    
-    NSParameterAssert(success);
-    NSParameterAssert(buffer);
-    
-    if(buffer)
-        CVBufferRelease(buffer);
-    
     dispatch_async(_queue, ^{
-        __block int i = 0;
-        [self.frameBuffer enumerateObjectsUsingBlock:^(UIImage *image, NSUInteger idx, BOOL *stop) {
-            if(self.input.readyForMoreMediaData)
-            {
-                i++;
-                CMTime present          = CMTimeMake(i , _frameRate);
-                
-                buffer = [self pixelBufferForImage:image];
-                BOOL result = [self.adapter appendPixelBuffer:buffer withPresentationTime:present];
-                if(!result)
-                    NSLog(@"Failed to write image: %@", [self.writer error]);
-                
-                if(buffer)
-                    CVPixelBufferRelease(buffer);
-            }
-            else
-            {
-                NSLog(@"Input error");
-                i--;
-            }
-            
-            [NSThread sleepForTimeInterval:sleepOffset];
-        }];
-
         [self.input markAsFinished];
         [self.writer finishWritingWithCompletionHandler:^{
-            
             if(callback)
                 callback(self.fileOutputURL);
         }];
     });
 }
 
-
 @end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

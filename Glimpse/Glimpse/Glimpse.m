@@ -37,20 +37,15 @@ static double const GlimpseFramesPerSecond = 24.0;
     return self;
 }
 
-- (void)startRecordingView:(UIView *)view withCallback:(GlimpseCompletedCallback)callback
-{
-    [self startRecordingView:view onCompletion:callback];
-}
-
-- (void)startRecordingView:(UIView *)view onCompletion:(GlimpseCompletedCallback)block
+- (void)startRecordingView:(UIView *)view size:(CGSize)size onCompletion:(GlimpseCompletedCallback)block
 {
     self.sourceView = view;
     self.callback   = block;
-    self.writer.size = view.bounds.size;
+    self.writer.size = size;
 	
 	self.writer.framesPerSecond = GlimpseFramesPerSecond;
-
-    self.writer.startDate = [NSDate date];
+    
+    [self.writer start];
     
     __weak typeof(self) weakSelf = self;
     _queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
@@ -69,9 +64,6 @@ static double const GlimpseFramesPerSecond = 24.0;
 - (void)stop
 {
     dispatch_source_cancel(_source);
-    
-    self.writer.endDate = [NSDate date];
-
     [self.writer writeVideoFromImageFrames:^(NSURL *outputPath) {
         self.callback(outputPath);
     }];
@@ -80,13 +72,11 @@ static double const GlimpseFramesPerSecond = 24.0;
 - (UIImage *)imageFromView:(UIView *)view
 {
     UIGraphicsBeginImageContextWithOptions(view.frame.size , YES , 0 );
-    
-    if ([view respondsToSelector:@selector(drawViewHierarchyInRect:afterScreenUpdates:)]) {
-        [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:YES];
-    } else {
-        [view.layer renderInContext:UIGraphicsGetCurrentContext()];
-    }
+    [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:NO];
+
     UIImage *rasterizedView = UIGraphicsGetImageFromCurrentImageContext();
+    NSData* data = UIImageJPEGRepresentation(rasterizedView, 0.5);
+    rasterizedView = [UIImage imageWithData:data];
     UIGraphicsEndImageContext();
     
     return rasterizedView;

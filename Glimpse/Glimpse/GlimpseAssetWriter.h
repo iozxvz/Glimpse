@@ -37,21 +37,13 @@
 @property (readonly, nonatomic)     NSURL       *fileOutputURL;
 
 /**
- When recording started.
- **/
-@property (strong, nonatomic)       NSDate      *startDate;
-
-/**
- When recording stopped.
- **/
-@property (strong, nonatomic)       NSDate      *endDate;
-
-/**
  Creates a new video frame based of the image that is passed, added to the frame buffering.
  
  @param image Image to be written to video.
  **/
 - (void)writeFrameWithImage:(UIImage *)image;
+
+- (void)start;
 
 /**
  Writes images in frame buffer to video in sequence, then fires callback when complete.
