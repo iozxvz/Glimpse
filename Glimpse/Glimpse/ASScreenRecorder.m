@@ -52,7 +52,7 @@
     self = [super init];
     if (self) {
         _viewSize = [UIApplication sharedApplication].delegate.window.bounds.size;
-        _viewSize = CGSizeMake(_viewSize.width, _viewSize.height);
+        _viewSize = CGSizeMake(_viewSize.width/2, _viewSize.height/2);
         _scale = [UIScreen mainScreen].scale;
         // record half size resolution for retina iPads
         if ((UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) && _scale > 1) {
