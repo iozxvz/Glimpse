@@ -71,12 +71,14 @@ static double const GlimpseFramesPerSecond = 24.0;
 
 - (UIImage *)imageFromView:(UIView *)view
 {
-    UIGraphicsBeginImageContextWithOptions(view.frame.size , YES , 0 );
-    [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:NO];
+    CGSize smaller = CGSizeMake(view.frame.size.width / 2, view.frame.size.height / 2);
+    
+    UIGraphicsBeginImageContextWithOptions(smaller , YES , 0 );
+    [view drawViewHierarchyInRect:CGRectMake(0, 0, smaller.width, smaller.height) afterScreenUpdates:NO];
 
     UIImage *rasterizedView = UIGraphicsGetImageFromCurrentImageContext();
-    NSData* data = UIImageJPEGRepresentation(rasterizedView, 0.5);
-    rasterizedView = [UIImage imageWithData:data];
+//    NSData* data = UIImageJPEGRepresentation(rasterizedView, 0.5);
+//    rasterizedView = [UIImage imageWithData:data];
     UIGraphicsEndImageContext();
     
     return rasterizedView;

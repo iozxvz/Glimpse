@@ -16,6 +16,6 @@ Glimpse is a simple library that allows you to create videos from UIViews. It re
   s.source_files = 'Glimpse/Glimpse/*.{h,m}'
 
 
-  s.public_header_files = 'Glimpse/Glimpse/Glimpse.h'
+  s.public_header_files = 'Glimpse/Glimpse/*.h'
   s.frameworks = 'MobileCoreServices', 'AssetsLibrary','CoreVideo','QuartzCore','UIKit'
 end

@@ -42,6 +42,7 @@ static NSString *const GlimpseAssetWriterQueueName = @"com.Glimpse.asset.writer.
         
         _frameRate  = (int32_t)self.framesPerSecond;
         _queue      = dispatch_queue_create([GlimpseAssetWriterQueueName cStringUsingEncoding:NSUTF8StringEncoding], 0);
+        dispatch_set_target_queue(_queue, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0));
     }
     return self;
 }
