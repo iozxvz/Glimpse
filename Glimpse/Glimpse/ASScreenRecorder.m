@@ -166,7 +166,7 @@
 
 - (NSURL*)tempFileURL
 {
-    NSString *outputPath = [NSHomeDirectory() stringByAppendingPathComponent:@"tmp/screenCapture.mp4"];
+    NSString *outputPath = [NSHomeDirectory() stringByAppendingPathComponent:@"tmp/Journey.mp4"];
     [self removeTempFilePath:outputPath];
     return [NSURL fileURLWithPath:outputPath];
 }
@@ -190,25 +190,17 @@
             [self->_videoWriterInput markAsFinished];
             [self->_videoWriter finishWritingWithCompletionHandler:^{
                 
-                void (^completion)(void) = ^() {
+                void (^completion)(NSURL *) = ^(NSURL *url) {
                     [self cleanup];
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        if (completionBlock) completionBlock();
+                        if (completionBlock) completionBlock(url);
                     });
                 };
                 
                 if (self.videoURL) {
-                    completion();
+                    completion(self.videoURL);
                 } else {
-                    ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
-                    [library writeVideoAtPathToSavedPhotosAlbum:self->_videoWriter.outputURL completionBlock:^(NSURL *assetURL, NSError *error) {
-                        if (error) {
-                            NSLog(@"Error copying video to camera roll:%@", [error localizedDescription]);
-                        } else {
-                            [self removeTempFilePath:self->_videoWriter.outputURL.path];
-                            completion();
-                        }
-                    }];
+                    completion(self->_videoWriter.outputURL);
                 }
             }];
         });

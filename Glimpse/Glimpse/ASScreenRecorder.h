@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-typedef void (^VideoCompletionBlock)(void);
+typedef void (^VideoCompletionBlock)(NSURL *);
 @protocol ASScreenRecorderDelegate;
 
 @interface ASScreenRecorder : NSObject
@@ -23,6 +23,8 @@ typedef void (^VideoCompletionBlock)(void);
 + (instancetype)sharedInstance;
 - (BOOL)startRecording:(UIView *)view;
 - (void)stopRecordingWithCompletion:(VideoCompletionBlock)completionBlock;
+
+- (void)removeTempFilePath:(NSString*)filePath;
 @end
 
 
